@@ -66,3 +66,13 @@ npm run dev:h5
 ```
 
 ![Alt text](image.png)
+
+### uniapp 使用 ts 类型检测
+
+![Alt text](image-1.png)
+
+# 安装依赖
+
+npm i -D @uni-helper/uni-app-types
+
+# 配置 tsconfig.json，确保 compilerOptions.types 中含有 @dcloudio/types 和 @uni-helper/uni-app-types 且 include 包含了对应的 vue 文件
