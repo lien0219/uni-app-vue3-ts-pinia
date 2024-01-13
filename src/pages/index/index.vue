@@ -37,13 +37,37 @@ const onScrolltolower = () => {
   // console.log('滚动到底部了')
   guessRef.value?.getMore()
 }
+// 下拉刷新
+const isTriggered = ref(false)
+const onRefresherrefresh = async () => {
+  isTriggered.value = true
+  // console.log('下拉刷新了')
+  // await getHomeBannerData()
+  // await getHomeCategoryData()
+  // await getHomeHotData()
+  // 重置猜你喜欢数据
+  guessRef.value?.resetData()
+  await Promise.all([
+    getHomeBannerData(),
+    getHomeCategoryData(),
+    getHomeHotData(),
+    guessRef.value?.getMore(),
+  ])
+  isTriggered.value = false
+}
 </script>
 
 <template>
   <!-- 自定义导航 -->
   <CustomNavbar></CustomNavbar>
   <!-- 滚动视图 -->
-  <scroll-view @scrolltolower="onScrolltolower" scroll-y>
+  <scroll-view
+    refresher-enabled
+    @refresherrefresh="onRefresherrefresh"
+    :refresher-triggered="isTriggered"
+    @scrolltolower="onScrolltolower"
+    scroll-y
+  >
     <!-- 自定义轮播组件 -->
     <XtxSwiper :list="bannerList"></XtxSwiper>
     <!-- 分类 -->
