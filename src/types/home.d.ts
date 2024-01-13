@@ -1,4 +1,4 @@
-// import type { GoodsItem } from './global'
+import type { GoodsItem } from './global'
 
 /** 首页-广告区域数据类型 */
 export type BannerItem = {
@@ -39,4 +39,4 @@ export type HotItem = {
 }
 
 /** 猜你喜欢-商品类型 */
-// export type GuessItem = GoodsItem
+export type GuessItem = GoodsItem

@@ -6,6 +6,7 @@ import HotPanel from './components/HotPanel.vue'
 import { getHomeBannerAPI, getHomeCategoryAPI, getHomeHotAPI } from '@/services/home'
 import { ref } from 'vue'
 import type { BannerItem, CategoryItem, HotItem } from '@/types/home'
+import type { XtxGuessInstance } from '@/types/component'
 
 // 轮播图
 const bannerList = ref<BannerItem[]>([])
@@ -30,22 +31,39 @@ onLoad(() => {
   getHomeCategoryData()
   getHomeHotData()
 })
+
+const guessRef = ref<XtxGuessInstance>()
+const onScrolltolower = () => {
+  // console.log('滚动到底部了')
+  guessRef.value?.getMore()
+}
 </script>
 
 <template>
   <!-- 自定义导航 -->
   <CustomNavbar></CustomNavbar>
-  <!-- 自定义轮播组件 -->
-  <XtxSwiper :list="bannerList"></XtxSwiper>
-  <!-- 分类 -->
-  <CategoryPanel :list="categoryList"></CategoryPanel>
-  <!-- 热门推荐 -->
-  <HotPanel :list="hotList"></HotPanel>
-  <view class="index">index</view>
+  <!-- 滚动视图 -->
+  <scroll-view @scrolltolower="onScrolltolower" scroll-y>
+    <!-- 自定义轮播组件 -->
+    <XtxSwiper :list="bannerList"></XtxSwiper>
+    <!-- 分类 -->
+    <CategoryPanel :list="categoryList"></CategoryPanel>
+    <!-- 热门推荐 -->
+    <HotPanel :list="hotList"></HotPanel>
+    <!-- 猜你喜欢 -->
+    <XtxGuess ref="guessRef"></XtxGuess>
+    <!-- <view class="index">index</view> -->
+  </scroll-view>
 </template>
 
 <style lang="scss">
 page {
   background-color: #f7f7f7;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.scroll-view {
+  flex: 1;
 }
 </style>
