@@ -161,7 +161,7 @@ const openPopup = (name: typeof popupName.value) => {
   <uni-popup ref="popup" type="bottom" background-color="#fff">
     <AddressPanel v-if="popupName === 'address'" @close="popup?.close()"></AddressPanel>
     <ServicePanel v-if="popupName === 'service'" @close="popup?.close()"></ServicePanel>
-    <button @tap="popup?.close()">关闭弹出层</button>
+    <button @tap="popup?.close()">关闭</button>
   </uni-popup>
 </template>
 
