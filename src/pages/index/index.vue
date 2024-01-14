@@ -8,6 +8,7 @@ import { getHomeBannerAPI, getHomeCategoryAPI, getHomeHotAPI } from '@/services/
 import { ref } from 'vue'
 import type { BannerItem, CategoryItem, HotItem } from '@/types/home'
 import type { XtxGuessInstance } from '@/types/component'
+import { useGuessList } from '@/composables/index'
 
 // 轮播图
 const bannerList = ref<BannerItem[]>([])
@@ -35,11 +36,13 @@ onLoad(async () => {
   isLoading.value = false
 })
 
-const guessRef = ref<XtxGuessInstance>()
-const onScrolltolower = () => {
-  // console.log('滚动到底部了')
-  guessRef.value?.getMore()
-}
+// const guessRef = ref<XtxGuessInstance>()
+// const onScrolltolower = () => {
+//   // console.log('滚动到底部了')
+//   guessRef.value?.getMore()
+// }
+// 引入hooks函数
+const { guessRef, onScrolltolower } = useGuessList()
 // 下拉刷新
 const isTriggered = ref(false)
 const onRefresherrefresh = async () => {
