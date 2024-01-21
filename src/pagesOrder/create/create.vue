@@ -1,4 +1,13 @@
 <script setup lang="ts">
+import {
+  getMemberOrderPreAPI,
+  getMemberOrderPreNowAPI,
+  getMemberOrderRepurchaseByIdAPI,
+  postMemberOrderAPI,
+} from '@/services/order'
+import { useAddressStore } from '@/stores/modules/address'
+import type { OrderPreResult } from '@/types/order'
+import { onLoad } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 
 const { safeAreaInsets } = uni.getSystemInfoSync()
@@ -18,19 +27,73 @@ const activeDelivery = computed(() => deliveryList.value[activeIndex.value])
 const onChangeDelivery: UniHelper.SelectorPickerOnChange = (ev) => {
   activeIndex.value = ev.detail.value
 }
+
+const query = defineProps<{
+  skuId?: string
+  count?: string
+}>()
+
+// 获取订单信息
+const orderPre = ref<OrderPreResult>()
+const getMemberOrderPreData = async () => {
+  if (query.skuId && query.count) {
+    const res = await getMemberOrderPreNowAPI({
+      count: query.count,
+      skuId: query.skuId,
+    })
+    orderPre.value = res.result
+  } else {
+    const res = await getMemberOrderPreAPI()
+    // console.log(res)
+    orderPre.value = res.result
+  }
+}
+
+onLoad(() => {
+  getMemberOrderPreData()
+})
+
+// 收货地址
+const addressStore = useAddressStore()
+const selecteAddress = computed(() => {
+  return addressStore.selectedAddress || orderPre.value?.userAddresses.find((v) => v.isDefault)
+})
+
+// 提交订单
+const onOrderSubmit = async () => {
+  if (!selecteAddress.value?.id) {
+    return uni.showToast({
+      title: '请选择收货地址',
+      icon: 'none',
+    })
+  }
+  const res = await postMemberOrderAPI({
+    addressId: selecteAddress.value?.id,
+    buyerMessage: buyerMessage.value,
+    deliveryTimeType: activeDelivery.value.type,
+    goods: orderPre.value!.goods.map((v) => ({
+      count: v.count,
+      skuId: v.skuId,
+    })),
+    payChannel: 2,
+    payType: 1,
+  })
+  // console.log(res)
+  uni.redirectTo({ url: `/pagesOrder/detail/detail?id=${res.result.id}` })
+}
 </script>
 
 <template>
   <scroll-view scroll-y class="viewport">
     <!-- 收货地址 -->
     <navigator
-      v-if="false"
+      v-if="selecteAddress"
       class="shipment"
       hover-class="none"
       url="/pagesMember/address/address?from=order"
     >
-      <view class="user"> 张三 13333333333 </view>
-      <view class="address"> 广东省 广州市 天河区 程序员3 </view>
+      <view class="user">{{ selecteAddress.receiver }}-{{ selecteAddress.contact }}</view>
+      <view class="address"> {{ selecteAddress.fullLocation }}-{{ selecteAddress.address }} </view>
       <text class="icon icon-right"></text>
     </navigator>
     <navigator
@@ -46,24 +109,21 @@ const onChangeDelivery: UniHelper.SelectorPickerOnChange = (ev) => {
     <!-- 商品信息 -->
     <view class="goods">
       <navigator
-        v-for="item in 2"
-        :key="item"
-        :url="`/pages/goods/goods?id=1`"
+        v-for="item in orderPre?.goods"
+        :key="item.skuId"
+        :url="`/pages/goods/goods?id=${item.id}`"
         class="item"
         hover-class="none"
       >
-        <image
-          class="picture"
-          src="https://yanxuan-item.nosdn.127.net/c07edde1047fa1bd0b795bed136c2bb2.jpg"
-        />
+        <image class="picture" :src="item.picture" />
         <view class="meta">
-          <view class="name ellipsis"> ins风小碎花泡泡袖衬110-160cm </view>
-          <view class="attrs">藏青小花 130</view>
+          <view class="name ellipsis">{{ item.name }}</view>
+          <view class="attrs">{{ item.attrsText }}</view>
           <view class="prices">
-            <view class="pay-price symbol">99.00</view>
-            <view class="price symbol">99.00</view>
+            <view class="pay-price symbol">{{ item.payPrice }}</view>
+            <view class="price symbol">{{ item.price }}</view>
           </view>
-          <view class="count">x5</view>
+          <view class="count">{{ item.count }}</view>
         </view>
       </navigator>
     </view>
@@ -91,11 +151,11 @@ const onChangeDelivery: UniHelper.SelectorPickerOnChange = (ev) => {
     <view class="settlement">
       <view class="item">
         <text class="text">商品总价: </text>
-        <text class="number symbol">495.00</text>
+        <text class="number symbol">{{ orderPre?.summary.totalPrice.toFixed(2) }}</text>
       </view>
       <view class="item">
         <text class="text">运费: </text>
-        <text class="number symbol">5.00</text>
+        <text class="number symbol">{{ orderPre?.summary.postFee.toFixed(2) }}</text>
       </view>
     </view>
   </scroll-view>
@@ -103,9 +163,11 @@ const onChangeDelivery: UniHelper.SelectorPickerOnChange = (ev) => {
   <!-- 吸底工具栏 -->
   <view class="toolbar" :style="{ paddingBottom: safeAreaInsets?.bottom + 'px' }">
     <view class="total-pay symbol">
-      <text class="number">99.00</text>
+      <text class="number">{{ orderPre?.summary.totalPayPrice.toFixed(2) }}</text>
     </view>
-    <view class="button" :class="{ disabled: true }"> 提交订单 </view>
+    <view class="button" @tap="onOrderSubmit" :class="{ disabled: !selecteAddress?.id }">
+      提交订单
+    </view>
   </view>
 </template>
 
