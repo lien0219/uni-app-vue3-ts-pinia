@@ -1,35 +1,39 @@
 <script setup lang="ts">
 import { postLoginWxMinAPI, postLoginWxMinSimpleAPI } from '@/services/login'
-import { useMemberStore } from '@/stores/modules/member'
+import { useMemberStore } from '@/stores'
 import type { LoginResult } from '@/types/member'
 import { onLoad } from '@dcloudio/uni-app'
-import { ref } from 'vue'
 
-// 获取code登录凭证
+// #ifdef MP-WEIXIN
+// 获取 code 登录凭证
 let code = ''
 onLoad(async () => {
   const res = await wx.login()
   code = res.code
 })
-// 个人账号无法获取
-const onGetphonenumber: UniHelper.ButtonOnGetphonenumber = async (e) => {
-  const encryptedData = e.detail!.encryptedData!
-  const iv = e.detail!.iv!
+
+// 获取用户手机号码（企业）
+const onGetphonenumber: UniHelper.ButtonOnGetphonenumber = async (ev) => {
+  const encryptedData = ev.detail!.encryptedData!
+  const iv = ev.detail!.iv!
   const res = await postLoginWxMinAPI({ code, encryptedData, iv })
-  // console.log(e, res, '测试')
   loginSuccess(res.result)
 }
-// 模拟手机号登录
+// #endif
+
+// 模拟手机号码快捷登录
 const onGetphonenumberSimple = async () => {
-  const res = await postLoginWxMinSimpleAPI('18737055563')
-  // console.log(res)
+  const res = await postLoginWxMinSimpleAPI('13123456789')
   loginSuccess(res.result)
 }
+
 const loginSuccess = (profile: LoginResult) => {
+  // 保存会员信息
   const memberStore = useMemberStore()
   memberStore.setProfile(profile)
-  uni.showToast({ title: '登录成功', icon: 'success' })
+  uni.showToast({ icon: 'success', title: '登录成功' })
   setTimeout(() => {
+    // 页面跳转
     // uni.switchTab({ url: '/pages/my/my' })
     uni.navigateBack()
   }, 500)
@@ -44,15 +48,26 @@ const loginSuccess = (profile: LoginResult) => {
       ></image>
     </view>
     <view class="login">
+      <!-- 网页端表单登录 -->
+      <!-- #ifdef H5 -->
+      <input class="input" type="text" placeholder="请输入用户名/手机号码" />
+      <input class="input" type="text" password placeholder="请输入密码" />
+      <button class="button phone">登录</button>
+      <!-- #endif -->
+
+      <!-- 小程序端授权登录 -->
+      <!-- #ifdef MP-WEIXIN -->
       <button class="button phone" open-type="getPhoneNumber" @getphonenumber="onGetphonenumber">
         <text class="icon icon-phone"></text>
         手机号快捷登录
       </button>
+      <!-- #endif -->
       <view class="extra">
         <view class="caption">
           <text>其他登录方式</text>
         </view>
         <view class="options">
+          <!-- 通用模拟登录 -->
           <button @tap="onGetphonenumberSimple">
             <text class="icon icon-phone">模拟快捷登录</text>
           </button>
@@ -90,6 +105,16 @@ page {
   flex-direction: column;
   height: 60vh;
   padding: 40rpx 20rpx 20rpx;
+
+  .input {
+    width: 100%;
+    height: 80rpx;
+    font-size: 28rpx;
+    border-radius: 72rpx;
+    border: 1px solid #ddd;
+    padding-left: 30rpx;
+    margin-bottom: 20rpx;
+  }
 
   .button {
     display: flex;
@@ -141,6 +166,9 @@ page {
       button {
         padding: 0;
         background-color: transparent;
+        &::after {
+          border: none;
+        }
       }
     }
 
